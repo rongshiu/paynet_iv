@@ -1,0 +1,18 @@
+services:
+  notebook:
+    build: .
+    image: paynet-iv-pyspark:latest
+    container_name: paynet-iv-notebook
+    ports:
+      - "8888:8888"   # JupyterLab
+      - "4040:4040"   # Spark UI (only live while a SparkSession is running)
+    volumes:
+      # Bind-mount the repo so edits and outputs land on the host.
+      - .:/workspace
+    environment:
+      # Key for the PII tokenisation. Override it for anything real; the default
+      # exists only so the notebook runs out of the box.
+      PII_HMAC_KEY: ${PII_HMAC_KEY:-local-dev-key-not-for-production}
+      JUPYTER_TOKEN: paynet
+    # Spark's local driver is memory hungry on a 40k+ row shuffle.
+    shm_size: "2gb"

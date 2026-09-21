@@ -1,0 +1,80 @@
+# ---- Data & outputs -------------------------------------------------------
+# Transaction data is never committed: the raw feed is PII-bearing and the
+# curated layers are regenerable by re-running the notebook. Directory
+# skeletons are kept via .gitkeep so the paths exist on a fresh clone.
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Exported figures are build artifacts of the notebook.
+output/figures/**
+!output/figures/**/
+!output/figures/**/.gitkeep
+
+# ---- Secrets --------------------------------------------------------------
+# PII_HMAC_KEY and friends.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ---- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+develop-eggs/
+dist/
+eggs/
+.eggs/
+sdist/
+wheels/
+*.egg-info/
+*.egg
+.installed.cfg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Test & type-check caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# ---- Jupyter --------------------------------------------------------------
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+.jupyter/
+.local/
+
+# ---- Spark ----------------------------------------------------------------
+# Driver/executor logs, crash dumps and the metastore Spark drops in whatever
+# directory the session was started from.
+spark-warehouse/
+metastore_db/
+derby.log
+hs_err_pid*.log
+*.crc
+
+# ---- Editors & OS ---------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
