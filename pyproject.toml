@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paynet-iv"
+version = "0.1.0"
+description = "PySpark ingestion, cleaning, PII handling and analysis of a messy credit-card transaction feed"
+readme = "README.md"
+# Spark 3.5 is the last line fully exercised against Python 3.11; 3.12 is not
+# supported by this Spark/py4j pair.
+requires-python = ">=3.10,<3.12"
+
+# Versions are pinned rather than ranged: the PySpark / Arrow / pandas contract
+# is version sensitive, and a reviewer should get the same numbers I did.
+dependencies = [
+    "pyspark==3.5.3",
+    "pyarrow==17.0.0",   # powers toPandas() and pandas_udf
+    "pandas==2.2.3",
+    "numpy==1.26.4",
+    "matplotlib==3.9.2",
+]
+
+[project.optional-dependencies]
+# Only needed to *run* the notebook; the package itself imports none of these.
+notebook = [
+    "jupyterlab==4.2.5",
+    "notebook==7.2.2",
+    "ipykernel==6.29.5",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
