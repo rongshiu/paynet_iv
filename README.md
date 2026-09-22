@@ -26,9 +26,22 @@ docker compose build
 # 2. Put the data in place — see "Getting the data" below
 #    -> data/raw/transactions.json
 
-# 3. Start JupyterLab with a PII tokenisation key
+# 3. Set the PII tokenisation key, once
+cp .env.example .env
+printf 'PII_HMAC_KEY=%s\n' "$(openssl rand -hex 32)" > .env
+
+# 4. Start JupyterLab
+docker compose up
+```
+
+Compose reads `.env` automatically, so the key only has to be set once. If you would rather not
+keep it on disk, pass it per-invocation instead and skip the `.env` entirely:
+
+```bash
 PII_HMAC_KEY="$(openssl rand -hex 32)" docker compose up
 ```
+
+`.env` is gitignored; `.env.example` is committed and documents the variable.
 
 Then open **<http://localhost:8888/lab?token=paynet>** and run
 `notebooks/01_credit_card_transactions.ipynb` top to bottom
@@ -260,8 +273,16 @@ To work on it outside Docker you would need a JDK 17 on `PATH`, then `pip instal
 
 ## Troubleshooting
 
-**`PII_HMAC_KEY: set PII_HMAC_KEY...`** — compose is refusing to start without a key. See Quick
-start; this is working as intended.
+**`error while interpolating services.notebook.environment.PII_HMAC_KEY`** — compose is refusing to
+start without a key. This is working as intended, not a misconfiguration. Create a `.env`:
+
+```bash
+printf 'PII_HMAC_KEY=%s\n' "$(openssl rand -hex 32)" > .env
+```
+
+Note that `-e PII_HMAC_KEY=...` on the `docker compose run` command line does **not** satisfy it:
+the variable is interpolated into `docker-compose.yml` itself, which happens before any container
+starts. It has to be in `.env` or exported in your shell.
 
 **`Cannot connect to the Docker daemon`** — Docker Desktop is not running. Start it and wait for
 the whale icon to settle.
