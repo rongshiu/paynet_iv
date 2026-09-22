@@ -6,6 +6,13 @@ notebook, running in a container so it behaves the same everywhere.
 
 **The deliverable is [`notebooks/01_credit_card_transactions.ipynb`](notebooks/01_credit_card_transactions.ipynb).**
 
+> **The committed outputs were produced on the synthetic stand-in, not the Kaggle file.** The
+> generator deliberately makes fraud depend on hour, category, amount, age, distance and merchant
+> tenure, and §7 recovers those same six relationships — so the figures demonstrate that the
+> pipeline transmits signal, they are not findings about card fraud. Put the Kaggle JSON at
+> `data/raw/transactions.json`, set `SYNTHETIC_DATA = False` in §0, and re-run for results about
+> the world. See [Getting the real data](#getting-the-real-data).
+
 ---
 
 ## Quick start
@@ -56,6 +63,8 @@ Or keep the container as a plain kernel server: open the notebook locally, click
 
 ---
 
+<a name="getting-the-real-data"></a>
+
 ## Getting the real data
 
 The notebook reads `data/raw/transactions.json`. Anything in `data/` is gitignored — transaction
@@ -64,6 +73,11 @@ data does not belong in a repository, synthetic or not.
 **Option A — Kaggle (the real thing).** Download the credit-card transactions dataset on the host,
 from the Kaggle website or the `kaggle` CLI, and put the JSON at `data/raw/transactions.json`. The
 bind mount makes it visible to the container immediately — no rebuild, no restart.
+
+Set `SYNTHETIC_DATA = False` in §0 once you do. That flag gates two things: the provenance banner on
+the findings in §9, and an assertion in §5 that **refuses to tokenise real data with the published
+development `PII_HMAC_KEY`** — a default key in a public repo is not a key, so set it from a secret
+store before the first real run.
 
 Downloading from *inside* the container is deliberately not wired up: it would mean carrying a
 Kaggle client in the image and mounting your API credentials into it, which is a lot of standing
@@ -117,10 +131,29 @@ population, so tokenising the name alone achieves nothing).
 **PII handling never deletes a column.** The brief specifies 26 output columns, so masking,
 tokenisation and generalisation are all applied **in place**: `cc_num` becomes `374512******2099`,
 `street` becomes `[REDACTED]`, `zip` becomes `468**`, `dob` drops to year of birth. Derived keys
-(`card_token`, `customer_token`, `cc_bin6`, `zip3`, `age_band`) are added *beside* the originals,
+(`card_token`, `cc_bin6`, `cc_last4`, `zip3`, `age_band`) are added *beside* the originals,
 not in place of them — a single hash over several concatenated identifiers would collapse five
 columns into one opaque string, which is a loss of schema rather than a privacy control. §5.5
 asserts the full 26-column contract and prints the treatment applied to each column.
+
+**The identity key was chosen by measurement, not by instinct.** The obvious cardholder key —
+`HMAC(first | last | dob)` — is built from the three dirtiest columns in the feed, and §5.5 measures
+what that costs: 1,582 distinct cards inflate to 2,060 name-and-DOB keys, with only 750 cards
+surviving as a single identity. So the key is the card, the column is called `card_token`, and every
+"cardholder" figure is reported as *cards* — an upper bound that is stated rather than a precise
+number that is wrong.
+
+**Timestamps are delivered in the brief's columns.** `trans_date_trans_time`,
+`merch_last_update_time` and `merch_eff_time` carry the UTC+8 string the brief asks for
+(`2020-09-01 10:37:00.000000 +0800`), asserted against that format in §5.6. The canonical typed
+instant stays beside each as `<col>_utc`, because cross-field rules and engineered features have to
+compute on instants, not strings.
+
+**Previews are redacted before §5 runs.** The profiling cells in §1–§4 look at values that are still
+raw. They are redacted by character class for display — digits to `9`, upper to `X`, lower to `x`,
+punctuation kept — so a defect's *shape* stays visible (`9999-9999-9999-9999`, `Xx. XXXXXX,, Xxxxxxx`)
+while the identity does not. On the Kaggle file this is what keeps real card numbers and addresses
+out of a notebook that goes to GitHub.
 
 ---
 
