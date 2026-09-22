@@ -27,6 +27,12 @@ notebook = [
     "jupyterlab==4.2.5",
     "notebook==7.2.2",
     "ipykernel==6.29.5",
+    # Transitive, but pinned for the same reason as everything else here. httpx
+    # 0.28 removed the `proxies=` argument that jupyterlab 4.2.5 passes to
+    # AsyncClient, so an unpinned resolve throws a TypeError on every server
+    # start -- harmless (the extension manager falls back to read-only) but it
+    # prints a traceback into the startup log of an otherwise clean run.
+    "httpx==0.27.2",
 ]
 
 [tool.setuptools.packages.find]
