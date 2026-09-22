@@ -95,7 +95,7 @@ so it adapts to a different nesting layout without edits.
 | 2 | **JSON flattening** — a generic recursive struct expander, mapped to the 26 required columns by leaf name. |
 | 3 | **Profiling** — null/blank/token-missing rates, cardinality, off-pattern value samples. |
 | 4 | **Cleaning & data quality** — ~40 named rules, each producing a typed value *and* a flag. Includes the **timestamp conversion to UTC+8** (§4.1) and the **`person_name` derivation** (§4.2). |
-| 5 | **PII handling** — keyed HMAC tokenisation and a bronze/silver/gold layering, with a measured re-identification check. |
+| 5 | **PII handling** — in-place masking/tokenisation and a bronze/silver/gold layering, with the 26-column schema contract verified and a measured re-identification check. |
 | 6 | **Feature engineering** — haversine distance, local hour/day, merchant tenure, in-category amount z-score. |
 | 7 | **Visualisation** — six figures, each with its rationale, its table, and what it means. |
 | 8–9 | Parquet outputs, findings, and limitations. |
@@ -113,6 +113,14 @@ known BIN and a Luhn-constrained check digit is about 10⁹ candidates, which a 
 seconds. The notebook uses a keyed HMAC whose secret never touches the data, and separately
 generalises the quasi-identifiers (ZIP + date of birth + gender uniquely identifies most of the US
 population, so tokenising the name alone achieves nothing).
+
+**PII handling never deletes a column.** The brief specifies 26 output columns, so masking,
+tokenisation and generalisation are all applied **in place**: `cc_num` becomes `374512******2099`,
+`street` becomes `[REDACTED]`, `zip` becomes `468**`, `dob` drops to year of birth. Derived keys
+(`card_token`, `customer_token`, `cc_bin6`, `zip3`, `age_band`) are added *beside* the originals,
+not in place of them — a single hash over several concatenated identifiers would collapse five
+columns into one opaque string, which is a loss of schema rather than a privacy control. §5.5
+asserts the full 26-column contract and prints the treatment applied to each column.
 
 ---
 
@@ -140,7 +148,8 @@ population, so tokenising the name alone achieves nothing).
 
 | Path | Contents |
 |---|---|
-| `data/curated/analytics_transactions/` | The gold layer — tokenised, generalised, feature-engineered. Partitioned by local date. |
+| `data/curated/curated_transactions/` | The silver layer — full 26-column schema, direct identifiers masked or tokenised, quasi-identifiers exact. |
+| `data/curated/analytics_transactions/` | The gold layer — same schema, quasi-identifiers generalised, feature-engineered. Partitioned by local date. |
 | `data/curated/quarantine_failed_rules/` | Rows that failed a fatal rule, with `dq_flags` attached. |
 | `data/curated/quarantine_unparseable/` | Lines that were not valid JSON. |
 | `data/curated/dq_rule_counts/` | Rule-hit counts — the scorecard chart's source. |
