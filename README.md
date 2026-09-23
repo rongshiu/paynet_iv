@@ -206,6 +206,11 @@ punctuation kept — so a defect's *shape* stays visible (`9999-9999-9999-9999`,
 while the identity does not. That is what keeps real card numbers and addresses out of a notebook
 that goes to GitHub.
 
+The match is **by column name**, including flattened paths (`personal_detail.cc_num`) and carried
+originals (`person_name__raw`), so a preview that aliases a column to something generic silently
+opts out of it. Previews therefore keep their own column names, and derived spellings of a
+protected value — `first` and `last` from `person_name` — are redacted alongside the source.
+
 ---
 
 ## Layout
@@ -231,7 +236,7 @@ that goes to GitHub.
 | Path | Contents |
 |---|---|
 | `data/curated/curated_transactions/` | The silver layer — full 26-column schema, direct identifiers masked or tokenised, quasi-identifiers exact. |
-| `data/curated/analytics_transactions/` | The gold layer — same schema, quasi-identifiers generalised, feature-engineered. Partitioned by `date_utc8`. |
+| `data/curated/analytics_transactions/` | The gold layer — same schema, quasi-identifiers generalised, feature-engineered. Partitioned by `month_utc8` (see §8 for why month, not day). |
 | `data/curated/quarantine_failed_rules/` | Rows that failed a fatal rule, with `dq_flags` attached — **silver-tier protected**. |
 | `data/curated/quarantine_unparseable/` | Lines that were not valid JSON, redacted by character class. |
 | `data/curated/dq_rule_counts/` | Rule-hit counts — the scorecard chart's source. |
