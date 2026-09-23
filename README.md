@@ -16,15 +16,21 @@ does not belong in version control. See [Getting the data](#getting-the-data).
 
 ## Quick start
 
-You need **Docker Desktop** running, the dataset in `data/raw/`, and a tokenisation key. Nothing
-else — no Java, no Python, no Spark on the host.
+You need **Docker Desktop**, `curl`, and `unzip`. Java, Python, Spark, and a Kaggle account are not
+needed on the host.
 
 ```bash
 # 1. Build the image (first run pulls ~500 MB and takes a few minutes)
 docker compose build
 
-# 2. Put the data in place — see "Getting the data" below
-#    -> data/raw/transactions.json
+# 2. Download dataset version 1 and put it at the path the notebook expects
+mkdir -p data/raw
+curl --fail --location --retry 3 \
+  'https://www.kaggle.com/api/v1/datasets/download/jinquan/cc-sample-data?datasetVersionNumber=1' \
+  --output data/raw/cc-sample-data.zip
+unzip -j data/raw/cc-sample-data.zip cc_sample_transaction.json -d data/raw
+mv data/raw/cc_sample_transaction.json data/raw/transactions.json
+rm data/raw/cc-sample-data.zip
 
 # 3. Set the PII tokenisation key, once
 printf 'PII_HMAC_KEY=%s\n' "$(openssl rand -hex 32)" > .env
@@ -68,24 +74,49 @@ Stop it with `Ctrl-C`, then `docker compose down`.
 
 ## Getting the data
 
-The notebook reads `data/raw/transactions.json`. **No Kaggle account or API token is
-needed** — the dataset is public and `kagglehub` fetches it anonymously. It is a 210 MB
-download that expands to 967 MB, and it takes well under a minute on a normal connection.
+The notebook expects one file: `data/raw/transactions.json`. The commands below download the
+public, version-1 archive directly from Kaggle, so they do **not** require the Kaggle CLI, a Kaggle
+username, or an API token.
 
 ```bash
-pip install kagglehub
-python -c "import kagglehub, shutil, pathlib; \
-  p = kagglehub.dataset_download('jinquan/cc-sample-data'); \
-  shutil.copy(pathlib.Path(p)/'cc_sample_transaction.json', 'data/raw/transactions.json')"
+mkdir -p data/raw
+
+curl --fail --location --retry 3 \
+  'https://www.kaggle.com/api/v1/datasets/download/jinquan/cc-sample-data?datasetVersionNumber=1' \
+  --output data/raw/cc-sample-data.zip
+
+unzip -j data/raw/cc-sample-data.zip cc_sample_transaction.json -d data/raw
+mv data/raw/cc_sample_transaction.json data/raw/transactions.json
+rm data/raw/cc-sample-data.zip
 ```
 
-Or download it from the [dataset page](https://www.kaggle.com/datasets/jinquan/cc-sample-data) and
-unzip `cc_sample_transaction.json` to `data/raw/transactions.json`. The bind mount makes it visible
-to the container immediately — no rebuild, no restart.
+The archive is about 210 MiB and the extracted JSON is exactly 967,656,184 bytes. Check that the
+file landed in the right place before starting Docker:
 
-Downloading from *inside* the container is deliberately not wired up: it would mean carrying a
-Kaggle client in the image and mounting API credentials into it, which is a lot of standing
-machinery for a file you fetch once.
+```bash
+test -f data/raw/transactions.json && wc -c data/raw/transactions.json
+# Expected: 967656184 data/raw/transactions.json
+```
+
+Its SHA-256 checksum is:
+
+```text
+20d380cf7f537d13066857d18d24225f2d19e172716c7037910dec2649e4b29c
+```
+
+If the direct link is unavailable, download version 1 from the
+[dataset page](https://www.kaggle.com/datasets/jinquan/cc-sample-data), unzip
+`cc_sample_transaction.json`, rename it to `transactions.json`, and place it under `data/raw/`.
+The browser route may ask you to sign in. No image rebuild is needed after adding the file because
+the repository is bind-mounted into the container.
+
+If you already use the authenticated Kaggle CLI, this is equivalent:
+
+```bash
+kaggle datasets download jinquan/cc-sample-data \
+  --file cc_sample_transaction.json --path data/raw --unzip
+mv data/raw/cc_sample_transaction.json data/raw/transactions.json
+```
 
 ### Running it from VS Code instead
 

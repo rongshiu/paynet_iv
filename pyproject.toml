@@ -7,12 +7,10 @@ name = "paynet-iv"
 version = "0.1.0"
 description = "PySpark ingestion, cleaning, PII handling and analysis of a messy credit-card transaction feed"
 readme = "README.md"
-# Spark 3.5 is the last line fully exercised against Python 3.11; 3.12 is not
-# supported by this Spark/py4j pair.
+# This Spark/Py4J combination is tested against Python 3.10 and 3.11.
 requires-python = ">=3.10,<3.12"
 
-# Versions are pinned rather than ranged: the PySpark / Arrow / pandas contract
-# is version sensitive, and a reviewer should get the same numbers I did.
+# Pin the data stack so notebook results stay reproducible.
 dependencies = [
     "pyspark==3.5.3",
     "pyarrow==17.0.0",   # powers toPandas() and pandas_udf
@@ -22,16 +20,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Only needed to *run* the notebook; the package itself imports none of these.
+# Notebook runtime only.
 notebook = [
     "jupyterlab==4.2.5",
     "notebook==7.2.2",
     "ipykernel==6.29.5",
-    # Transitive, but pinned for the same reason as everything else here. httpx
-    # 0.28 removed the `proxies=` argument that jupyterlab 4.2.5 passes to
-    # AsyncClient, so an unpinned resolve throws a TypeError on every server
-    # start -- harmless (the extension manager falls back to read-only) but it
-    # prints a traceback into the startup log of an otherwise clean run.
+    # JupyterLab 4.2.5 still passes the proxies= argument removed in httpx 0.28.
     "httpx==0.27.2",
 ]
 

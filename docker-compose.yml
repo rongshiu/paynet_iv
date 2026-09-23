@@ -7,16 +7,12 @@ services:
       - "8888:8888"   # JupyterLab
       - "4040:4040"   # Spark UI (only live while a SparkSession is running)
     volumes:
-      # Bind-mount the repo so edits and outputs land on the host.
+      # Keep notebook edits and outputs on the host.
       - .:/workspace
     environment:
-      # Key for the PII tokenisation. There is deliberately NO default: this
-      # pipeline processes a real cardholder feed, and a key committed to the
-      # repository would make every token reversible by anyone holding it. The
-      # notebook refuses to start without one (§5.3).
+      # Generate this once for local use. There is intentionally no default.
       #   PII_HMAC_KEY="$(openssl rand -hex 32)" docker compose up
       PII_HMAC_KEY: ${PII_HMAC_KEY:?set PII_HMAC_KEY, e.g. PII_HMAC_KEY="$(openssl rand -hex 32)"}
       JUPYTER_TOKEN: paynet
-    # Spark runs local mode, so the driver is also the executor: 1.3M rows of
-    # shuffle need real headroom. Give Docker Desktop >= 8 GB.
+    # The local driver needs room for the 1.3M-row shuffle.
     shm_size: "2gb"

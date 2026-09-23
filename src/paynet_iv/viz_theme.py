@@ -1,12 +1,4 @@
-"""Matplotlib theme and palette for the transaction analysis notebook.
-
-Kept out of the notebook so the notebook shows *analysis*, not rcParams. The
-colour values are a validated palette: the categorical slots are assigned in a
-fixed order (never cycled), the sequential ramp is a single hue, and the
-diverging ramp is two poles around a neutral grey. Charts here are static
-images, so the interactive hover layer an HTML chart would carry is replaced by
-the printed summary table that accompanies each figure.
-"""
+"""Shared Matplotlib styling for the transaction notebook."""
 
 from __future__ import annotations
 
@@ -14,12 +6,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-# --------------------------------------------------------------------------
-# Palette
-# --------------------------------------------------------------------------
-
-# Categorical slots, in fixed assignment order. A chart that would need a 9th
-# series folds the tail into "Other" instead of inventing a hue.
+# Keep category colours in a fixed order. Charts with more than eight groups
+# collect the remainder under "Other".
 CATEGORICAL = [
     "#2a78d6",  # 1 blue
     "#eb6834",  # 2 orange
@@ -31,20 +19,16 @@ CATEGORICAL = [
     "#e34948",  # 8 red
 ]
 
-# Scatter / all-pairs chart forms are capped at the first three slots, which are
-# the ones that clear the colour-vision separation floors against every other
-# member of the set rather than just their neighbours.
+# These three remain distinct when every pair is compared.
 CATEGORICAL_ALL_PAIRS = CATEGORICAL[:3]
 
-# Single-hue sequential ramp (blue), light -> dark, for continuous magnitude.
+# Light to dark for continuous values.
 SEQUENTIAL = [
     "#cde2fb", "#b7d3f6", "#9ec5f4", "#86b6ef", "#6da7ec", "#5598e7",
     "#3987e5", "#2a78d6", "#256abf", "#1c5cab", "#184f95", "#104281", "#0d366b",
 ]
 
-# Reserved status colours. `critical` is what marks the fraud state -- it is a
-# state, not a series, and it always ships with a label rather than relying on
-# hue alone.
+# Status colours are separate from the category palette.
 STATUS = {
     "good": "#0ca30c",
     "warning": "#fab219",
@@ -52,7 +36,7 @@ STATUS = {
     "critical": "#d03b3b",
 }
 
-# Chart chrome and ink, light surface.
+# Neutral colours used around the data marks.
 INK = {
     "surface": "#fcfcfb",
     "page": "#f9f9f7",
@@ -64,7 +48,7 @@ INK = {
 }
 
 SEQ_CMAP = LinearSegmentedColormap.from_list("seq_blue", SEQUENTIAL)
-# Diverging: two opposed poles with a neutral grey midpoint, equal arms.
+# Equal blue and red arms around a neutral midpoint.
 DIV_CMAP = LinearSegmentedColormap.from_list(
     "div_blue_red", ["#184f95", "#3987e5", "#cde2fb", "#f0efec",
                      "#f6c9c9", "#e34948", "#a32424"]
@@ -94,7 +78,7 @@ def apply_theme() -> None:
         "axes.labelcolor": INK["secondary"],
         "axes.edgecolor": INK["axis"],
         "axes.linewidth": 0.8,
-        # Recessive chrome: keep the baseline, drop the frame.
+        # Keep the baseline, but lose the box around each chart.
         "axes.spines.top": False,
         "axes.spines.right": False,
         "axes.spines.left": False,
@@ -126,12 +110,8 @@ def apply_theme() -> None:
 
 
 def subtitle(ax, text: str) -> None:
-    """One line of context under the title, in secondary ink.
-
-    Reads the title back from the *left* slot: the theme sets
-    ``axes.titlelocation = "left"``, and a bare ``ax.get_title()`` reads the
-    centre slot, which is empty -- re-setting from it silently erases the title.
-    """
+    """Add a line of context below the title."""
+    # get_title() defaults to the centre slot, but this theme uses the left one.
     current = ax.get_title(loc="left") or ax.get_title()
     ax.set_title(current, pad=26)
     ax.annotate(text, xy=(0, 1.0), xycoords="axes fraction",
@@ -141,8 +121,7 @@ def subtitle(ax, text: str) -> None:
 
 def label_bars(ax, bars, fmt="{:.2f}", horizontal=False, pad=4,
                only=None, color=None) -> None:
-    """Direct-label bars. ``only`` restricts labelling to selected indices so
-    the chart carries a few anchors rather than a number on every mark."""
+    """Label all bars, or just the indices passed in ``only``."""
     for i, b in enumerate(bars):
         if only is not None and i not in only:
             continue
@@ -162,7 +141,7 @@ def strip_x_grid(ax) -> None:
 
 
 def horizontal_grid_only(ax) -> None:
-    """For horizontal bar charts the useful grid runs the other way."""
+    """Put the grid on the value axis for a horizontal bar chart."""
     ax.grid(False, axis="y")
     ax.grid(True, axis="x")
 
@@ -174,8 +153,7 @@ def save(fig, name: str, outdir="../output/figures") -> None:
 
 
 def stat_tiles(values, figsize=(11, 1.9)):
-    """A KPI row. Some numbers are a headline, not a chart -- this is the form
-    for a single magnitude with no comparison to draw."""
+    """Draw a row of headline metrics."""
     fig, axes = plt.subplots(1, len(values), figsize=figsize)
     if len(values) == 1:
         axes = [axes]
