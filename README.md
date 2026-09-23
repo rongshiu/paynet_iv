@@ -27,7 +27,6 @@ docker compose build
 #    -> data/raw/transactions.json
 
 # 3. Set the PII tokenisation key, once
-cp .env.example .env
 printf 'PII_HMAC_KEY=%s\n' "$(openssl rand -hex 32)" > .env
 
 # 4. Start JupyterLab
@@ -69,7 +68,9 @@ Stop it with `Ctrl-C`, then `docker compose down`.
 
 ## Getting the data
 
-The notebook reads `data/raw/transactions.json`.
+The notebook reads `data/raw/transactions.json`. **No Kaggle account or API token is
+needed** — the dataset is public and `kagglehub` fetches it anonymously. It is a 210 MB
+download that expands to 967 MB, and it takes well under a minute on a normal connection.
 
 ```bash
 pip install kagglehub
